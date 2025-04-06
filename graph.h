@@ -28,10 +28,10 @@ void DFS(Graph *graph, int source);
 void BFS(Graph *graph, int source);
 
 // BFS đếm số đỉnh, số cạnh trong một thành phần liên thông
-void BFS_count(Graph *graph, int startVertex, int *visited, int *numVertices, int *numEdges);
+void BFSComponent(Graph *graph, int source, int *componentVertexCount, int *componentEdgeCount);
 
 //  DFSCount  đếm số đỉnh, số cạnh trong một thành phần liên thông
-void DFSCount(Graph *graph, int source, int *numVertices, int *numEdges);
+void DFSComponent(Graph *graph, int source, int *numVertices, int *numEdges);
 
 
 // Đếm số thành phần liên thông và liệt kê số đỉnh, số cạnh của mỗi thành phần

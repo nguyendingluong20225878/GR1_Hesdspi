@@ -1,5 +1,5 @@
-#include "stdio.h"
-#include "stdlib.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include "node.h"
 
 //Khởi tạo 1 nút cho dslk
@@ -11,7 +11,7 @@ node_t initNode(int vertex){
 
 //Thêm 1 nút vào cuối dslk
 void addNode( node_t *root, int vertex){
-    if(*root = NULL) *root = initNode(vertex);
+    if(*root == NULL) *root = initNode(vertex);
     else{
         node_t tmp = *root;
         while(tmp-> _next != NULL){

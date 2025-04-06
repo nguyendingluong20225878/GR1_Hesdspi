@@ -1,5 +1,5 @@
-#include "stdio.h"
-#include "stdlib.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include "graph.h"
 #include "string.h"
 
@@ -49,6 +49,8 @@ void DFS(Graph *graph, int source) {
 
     int *stack = ds;
     int numInStack = 0, top = 0;
+    // int numVertices = 0;   // Số đỉnh của thành phần liên thông
+    // int numEdges = 0;      // Số cạnh của thành phần liên thông
 
     stack[top] = source;
     numInStack = 1;
@@ -63,9 +65,10 @@ void DFS(Graph *graph, int source) {
         adjList = tmp->_hash[index];
         visited[index] = 1;
         k += 1;
+        //numVertices++;
         if (k % 100000 == 0) printf("%d %d\n", k, source);
 
-        while (adjList->_next != NULL || adjList->_next != NULL) {
+        while (adjList->_next != NULL) {
             adjList = adjList->_next;
             source = adjList->_vertex;
             index = (source < tmp->_numVertex) ? source : getOORIndex(source);
@@ -78,9 +81,11 @@ void DFS(Graph *graph, int source) {
             waiting[index] = 1;
             top += 1;
             numInStack += 1;
+            //numEdges++; // Tăng số cạnh
         }
     }
     printf("k: %d\n", k);
+    //printf("Component connected with %d vertices and %d edges\n", numVertices, numEdges);
     free(visited);
     free(stack);
     free(waiting);
@@ -110,7 +115,7 @@ void BFS(Graph *graph, int source) {
         k += 1;
         if (k % 100000 == 0) printf("%d %d\n", k, source);
 
-        while (adjList->_next != NULL || adjList->_next != NULL) {
+        while (adjList->_next != NULL ) {
             adjList = adjList->_next;
             source = adjList->_vertex;
             index = (source < tmp->_numVertex) ? source : getOORIndex(source);
@@ -131,47 +136,75 @@ void BFS(Graph *graph, int source) {
     free(queue);
     free(waiting);
 }
-//Đếm số thanh phần liên thông trong đồ thị
+
+ // Hàm DFS để đếm số đỉnh và số cạnh trong một thành phần liên thông.
+ void DFSComponent(Graph *graph, int source, int *componentVertexCount, int *componentEdgeCount) {
+    
+    Graph tmp = *graph;
+    visited = resetArray(tmp->_numVertex);
+    ds = resetArray(tmp->_numVertex);
+    waiting = resetArray(tmp->_numVertex);
+
+    int *stack = ds;
+    int numInStack = 0, top = 0;
+
+    stack[top] = source;
+    numInStack = 1;
+
+    int index;
+    node_t adjList;
+    *componentVertexCount = 0; // Khởi tạo số đỉnh thành phần
+    *componentEdgeCount = 0;   // Khởi tạo số cạnh thành phần
+
+    while (numInStack) {
+        numInStack -= 1;
+        top = (top == 0) ? 0 : top - 1;
+        source = stack[top];
+        index = (source < tmp->_numVertex) ? source : getOORIndex(source);
+        adjList = tmp->_hash[index];
+        //if (visited[index] == 1) continue; // Tránh thăm lại các đỉnh đã được thăm
+        visited[index] = 1;
+        (*componentVertexCount)++;
+
+        while (adjList != NULL) {
+           // *componentEdgeCount += 1;
+            int dest = adjList->_vertex;
+            index = (dest < tmp->_numVertex) ? dest : getOORIndex(dest);
+
+            if (visited[index] == -1) {
+                stack[top] = dest;
+                top += 1;
+                numInStack += 1;
+                visited[index] = 1;
+            }
+            *componentEdgeCount += 1;
+            adjList = adjList->_next;
+        }
+    }
+}
+
 void countConnectedComponents(Graph *graph) {
     Graph tmp = *graph;
-    visited = resetArray(tmp->_numVertex);  // Mảng visited để theo dõi các đỉnh đã thăm.
-    int numComponents = 0;
+    visited = resetArray(tmp->_numVertex);
+
+    int totalComponents = 0; 
 
     for (int i = 0; i < tmp->_numVertex; i++) {
-        if (visited[i] == -1) {  // Nếu đỉnh chưa được thăm, bắt đầu một DFS/BFS mới.
-            numComponents++;  // Tăng số thành phần liên thông.
-            int numVertices = 0;
-            int numEdges = 0;
-            
-            // Thực hiện DFS hoặc BFS để tìm số đỉnh và số cạnh trong thành phần liên thông.
-            DFSCount(graph, i, &numVertices, &numEdges);
-            
-            printf("Component %d: Number of vertices = %d, Number of edges = %d\n", 
-                   numComponents, numVertices, numEdges);
+        if (visited[i] == -1) {
+            totalComponents++;
+            int componentVertexCount = 0;
+            int componentEdgeCount = 0;
+            DFSComponent(graph, i, &componentVertexCount, &componentEdgeCount);
+            printf("Thanh phan lien thong: %d dinh, %d canh\n", componentVertexCount, componentEdgeCount / 2); // Chia cho 2 vì mỗi cạnh được tính 2 lần
         }
     }
+    printf("Tong thanh phan lien thong: %d\n", totalComponents);
+    free(visited);
+    free(ds);
+    free(waiting);
+} 
 
-    printf("Total connected components: %d\n", numComponents);
-}
 
-// Hàm DFS để đếm số đỉnh và số cạnh trong một thành phần liên thông.
-void DFSCount(Graph *graph, int source, int *numVertices, int *numEdges) {
-    Graph tmp = *graph;
-    visited[source] = 1;
-    (*numVertices)++;
-
-    node_t adjList = tmp->_hash[source];
-    while (adjList != NULL) {
-        (*numEdges)++;
-        if (visited[adjList->_vertex] == -1) {
-            DFSCount(graph, adjList->_vertex, numVertices, numEdges);
-        }
-        adjList = adjList->_next;
-    }
-    
-    // Vì mỗi cạnh được đếm 2 lần (một lần từ mỗi đỉnh), ta chia số cạnh cho 2.
-    *numEdges /= 2;
-}
 
 
 int getOORIndex(int source) {
